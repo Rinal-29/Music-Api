@@ -7,7 +7,7 @@ const routes = (albumsHandler) => [
   {
     method: 'GET',
     path: '/albums/{id}',
-    handler: albumsHandler.getAlbumByIdHandler,
+    handler: albumsHandler.getAllSongByAlbumIdHandler,
   },
   {
     method: 'PUT',
