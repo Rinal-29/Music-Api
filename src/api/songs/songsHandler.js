@@ -40,7 +40,22 @@ class songsHandler {
   }
 
   getSongsHandler(request, h) {
-    const songList = this._service.getSongs();
+    const { title, performer } = request.query;
+    let songList = this._service.getSongs();
+
+    if (title && performer) {
+      songList = songList.filter((song) => song.title.toLowerCase().includes(title.toLowerCase())
+        && song.performer.toLowerCase().includes(performer.toLowerCase()));
+    } else if (title || performer) {
+      if (title) {
+        songList = songList.filter((song) => song.title.toLowerCase()
+          .includes(title.toLowerCase()));
+      } else {
+        songList = songList.filter((song) => song.performer.toLowerCase()
+          .includes(performer.toLowerCase()));
+      }
+    }
+
     const response = h.response({
       status: 'success',
       data: {
