@@ -30,12 +30,9 @@ class SongsService {
   }
 
   getSongs() {
-    const songList = [];
-    this._songs.forEach((song) => {
-      const prop = { id: song.id, title: song.title, performer: song.performer };
-      songList.push(prop);
-    });
-    return songList;
+    return this._songs.map((song) => ({
+      id: song.id, title: song.title, performer: song.performer,
+    }));
   }
 
   getSongById(id) {
@@ -76,16 +73,13 @@ class SongsService {
   }
 
   getSongsByAlbumId(albumId) {
-    const albumSongs = [];
     const songs = this._songs.filter((song) => song.albumId === albumId);
 
     if (songs.length < 0) throw new NotFoundError('tidak ada album songs, Id tidak ditemukan');
 
-    songs.forEach((song) => {
-      const prop = { id: song.id, title: song.title, performer: song.performer };
-      albumSongs.push(prop);
-    });
-    return albumSongs;
+    return songs.map((song) => ({
+      id: song.id, title: song.title, performer: song.performer,
+    }));
   }
 }
 
