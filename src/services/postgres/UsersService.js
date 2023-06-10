@@ -36,7 +36,7 @@ class UsersService {
     if (result.rows.length > 0) throw new InvariantError('Gagal menambahkan user. Username sudah digunakan.');
   }
 
-  async veridfyUserCredential(username, password) {
+  async verifyUserNameAndPassword(username, password) {
     const query = {
       text: 'SELECT id, password FROM users WHERE username = $1',
       values: [username],
