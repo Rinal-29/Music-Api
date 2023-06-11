@@ -57,7 +57,7 @@ class SongsService {
     albumId,
   }) {
     const query = {
-      text: 'UPDATE songs SET title = $1, year = $2, genre = $3, performer = $4, duration = $5, "albumId" = $6 WHERE id = $7 RETURNING id',
+      text: 'UPDATE songs SET title = $1, year = $2, genre = $3, performer = $4, duration = $5, album_id = $6 WHERE id = $7 RETURNING id',
       values: [title, year, genre, performer, duration, albumId, id],
     };
 
@@ -79,7 +79,7 @@ class SongsService {
 
   async getSongsByAlbumId(albumId) {
     const query = {
-      text: 'SELECT * FROM songs WHERE songs."albumId" = $1',
+      text: 'SELECT * FROM songs WHERE album_id = $1',
       values: [albumId],
     };
 
