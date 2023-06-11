@@ -1,6 +1,8 @@
 require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
+const Jwt = require('@hapi/jwt');
+
 const MusicsValidator = require('./validator/musics');
 const tokenManager = require('./tokenize/TokenManagerService');
 
@@ -22,6 +24,10 @@ const authentications = require('./api/Authentications');
 const AuthenticationsService = require('./services/postgres/AuthenticationsService');
 const AuthenticationsValidator = require('./validator/authentications');
 
+// playlists
+const playlists = require('./api/playlists');
+const PlaylistsService = require('./services/postgres/PlaylistsService');
+
 // error
 const ClientError = require('./exceptions/ClientError');
 
@@ -30,6 +36,7 @@ const init = async () => {
   const songsService = new SongsService();
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
+  const playlistService = new PlaylistsService();
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -39,6 +46,30 @@ const init = async () => {
         origin: ['*'],
       },
     },
+  });
+
+  // registrasi plugin eksternal
+  await server.register([
+    {
+      plugin: Jwt,
+    },
+  ]);
+
+  // mendefinisikan strategy autentikasi jwt
+  server.auth.strategy('musicsapp_jwt', 'jwt', {
+    keys: process.env.ACCESS_TOKEN_KEY,
+    verify: {
+      aud: false,
+      iss: false,
+      sub: false,
+      maxAgeSec: process.env.ACCESS_TOKEN_AGE,
+    },
+    validate: (artifacts) => ({
+      isValid: true,
+      credentials: {
+        id: artifacts.decoded.payload.id,
+      },
+    }),
   });
 
   await server.register([
@@ -69,6 +100,13 @@ const init = async () => {
         tokenManager,
         validator: AuthenticationsValidator,
       },
+    }, {
+      plugin: playlists,
+      options: {
+        service: playlistService,
+        songsService,
+        validator: MusicsValidator,
+      },
     },
   ]);
 
@@ -92,6 +130,7 @@ const init = async () => {
         message: 'terjadi kegagalan pada server kami',
       });
       error.code(500);
+      console.log(error);
       return error;
     }
 

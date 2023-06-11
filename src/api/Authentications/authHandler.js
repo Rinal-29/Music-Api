@@ -59,7 +59,7 @@ class AuthHandler {
     await this._service.deleteRefreshToken(refreshToken);
     const response = h.response({
       status: 'success',
-      message: 'Refresh Token berhasil diperbarui',
+      message: 'Refresh Token berhasil dihapus',
     });
     return response;
   }
