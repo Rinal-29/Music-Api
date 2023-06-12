@@ -6,8 +6,9 @@ const AuthorizationError = require('../../exceptions/AuthorizationError');
 const { mapDBToModelPlaylists, mapDBToModelSongList } = require('../../utils');
 
 class PlaylistsService {
-  constructor() {
+  constructor(collaborationsService) {
     this._pool = new Pool();
+    this._collaborationsService = collaborationsService;
   }
 
   async addPlaylist({ name, owner }) {
@@ -25,12 +26,21 @@ class PlaylistsService {
     return result.rows[0].id;
   }
 
-  async getAllPlaylist() {
-    const result = await this._pool.query(`SELECT playlists.*, users.username
-    FROM playlists
-    LEFT JOIN users ON users.id = playlists.owner`);
+  async getAllPlaylist(owner) {
+    const queryPlaylists = {
+      text: `SELECT playlists.*, users.username from playlists
+      LEFT JOIN collaborations ON collaborations.playlist_id = playlists.id
+      LEFT JOIN users ON users.id = playlists.owner
+      WHERE playlists.owner = $1 OR collaborations.user_id = $1
+      `,
+      values: [owner],
+    };
 
-    return result.rows.map(mapDBToModelPlaylists);
+    const result = await this._pool.query(queryPlaylists);
+
+    const mappedResult = result.rows.map(mapDBToModelPlaylists);
+
+    return mappedResult;
   }
 
   async deletePlaylistById(id) {
@@ -58,16 +68,17 @@ class PlaylistsService {
     return result.rows[0].id;
   }
 
-  async getAllPlaylistSongsById(playlistId, credentialId) {
+  async getAllPlaylistSongsById(playlistId) {
     const queryPlaylist = {
-      text: `SELECT playlists.id, playlists.name
+      text: `SELECT playlists.id, playlists.name, playlists.owner, users.username
       FROM playlists
       LEFT JOIN playlist_songs 
       ON playlist_songs.playlist_id = playlists.id
       LEFT JOIN songs
       ON playlist_songs.song_id = songs.id
-      WHERE playlist_songs.playlist_id = $1
-      GROUP BY playlists.id`,
+      LEFT JOIN users
+      ON users.id = playlists.owner
+      WHERE playlist_songs.playlist_id = $1`,
       values: [playlistId],
     };
 
@@ -83,25 +94,15 @@ class PlaylistsService {
       values: [playlistId],
     };
 
-    const queryUsername = {
-      text: `SELECT users.username 
-      FROM playlists
-      LEFT JOIN users
-      ON users.id = playlists.owner
-      WHERE users.id = $1 OR playlists.owner = $1
-      GROUP BY users.username`,
-      values: [credentialId],
-    };
-
     const resultPlaylist = await this._pool.query(queryPlaylist);
     const resultSongs = await this._pool.query(querySongs);
-    const username = await this._pool.query(queryUsername);
 
+    const playlist = resultPlaylist.rows.map(mapDBToModelPlaylists)[0];
     const songList = resultSongs.rows.map(mapDBToModelSongList);
     const playlistSongs = {
-      id: resultPlaylist.rows[0].id,
-      name: resultPlaylist.rows[0].name,
-      username: username.rows[0].username,
+      id: playlist.id,
+      name: playlist.name,
+      username: playlist.username,
       songs: songList,
     };
 
@@ -130,6 +131,21 @@ class PlaylistsService {
 
     const playlist = result.rows[0];
     if (playlist.owner !== owner) throw new AuthorizationError('Anda tidak berhak mengakses resource ini');
+  }
+
+  async verifyPlaylistAccess(playlistId, userId) {
+    try {
+      await this.verifyPlaylistOwner(playlistId, userId);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      try {
+        await this._collaborationsService.verifyCollaborator(playlistId, userId);
+      } catch {
+        throw error;
+      }
+    }
   }
 }
 

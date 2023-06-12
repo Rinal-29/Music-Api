@@ -3,6 +3,7 @@ const bycrpt = require('bcrypt');
 const { Pool } = require('pg');
 const InvariantError = require('../../exceptions/InvariantEerror');
 const AuthenticationError = require('../../exceptions/AuthenticationError');
+const NotFoundError = require('../../exceptions/NotFoundError');
 
 class UsersService {
   constructor() {
@@ -50,6 +51,16 @@ class UsersService {
     if (!match) throw new AuthenticationError('Kredensial yang Anda berikan salah');
 
     return id;
+  }
+
+  async verifyUserById(id) {
+    const query = {
+      text: 'SELECT username FROM users WHERE id = $1',
+      values: [id],
+    };
+
+    const result = await this._pool.query(query);
+    if (!result.rows.length) throw new NotFoundError('Gagal mendapatkan user. Id tidak ditemukan');
   }
 }
 
