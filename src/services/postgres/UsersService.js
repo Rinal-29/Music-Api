@@ -22,7 +22,7 @@ class UsersService {
     };
 
     const result = await this._pool.query(query);
-    if (!result.rows.length) throw new InvariantError('User gagal ditambahkan');
+    if (!result.rowCount) throw new InvariantError('User gagal ditambahkan');
 
     return result.rows[0].id;
   }
@@ -34,7 +34,7 @@ class UsersService {
     };
 
     const result = await this._pool.query(query);
-    if (result.rows.length > 0) throw new InvariantError('Gagal menambahkan user. Username sudah digunakan.');
+    if (result.rowCount > 0) throw new InvariantError('Gagal menambahkan user. Username sudah digunakan.');
   }
 
   async verifyUserNameAndPassword(username, password) {
@@ -44,7 +44,7 @@ class UsersService {
     };
 
     const result = await this._pool.query(query);
-    if (!result.rows.length) throw new AuthenticationError('Kredensial yang Anda berikan salah');
+    if (!result.rowCount) throw new AuthenticationError('Kredensial yang Anda berikan salah');
 
     const { id, password: hashedPassword } = result.rows[0];
     const match = await bycrpt.compare(password, hashedPassword);
@@ -60,7 +60,7 @@ class UsersService {
     };
 
     const result = await this._pool.query(query);
-    if (!result.rows.length) throw new NotFoundError('Gagal mendapatkan user. Id tidak ditemukan');
+    if (!result.rowCount) throw new NotFoundError('Gagal mendapatkan user. Id tidak ditemukan');
   }
 }
 

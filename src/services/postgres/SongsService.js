@@ -43,7 +43,7 @@ class SongsService {
     };
     const result = await this._pool.query(query);
 
-    if (!result.rows.length) throw new NotFoundError('Song tidak ditemukan');
+    if (!result.rowCount) throw new NotFoundError('Song tidak ditemukan');
 
     return result.rows.map(mapDBToModelSong)[0];
   }
@@ -63,7 +63,7 @@ class SongsService {
 
     const result = await this._pool.query(query);
 
-    if (!result.rows.length) throw new NotFoundError('Gagal memperbarui data. Id tidak ditemukan');
+    if (!result.rowCount) throw new NotFoundError('Gagal memperbarui data. Id tidak ditemukan');
   }
 
   async deleteSongById(id) {
@@ -74,7 +74,7 @@ class SongsService {
 
     const result = await this._pool.query(query);
 
-    if (!result.rows.length) throw new NotFoundError('Song gagal dihapus, Id tidak ditemukan');
+    if (!result.rowCount) throw new NotFoundError('Song gagal dihapus, Id tidak ditemukan');
   }
 
   async getSongsByAlbumId(albumId) {
