@@ -2,6 +2,8 @@ require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
+const Inert = require('@hapi/inert');
+const path = require('path');
 
 const MusicsValidator = require('./validator/musics');
 const tokenManager = require('./tokenize/TokenManagerService');
@@ -27,17 +29,22 @@ const AuthenticationsValidator = require('./validator/authentications');
 // playlists
 const playlists = require('./api/playlists');
 const PlaylistsService = require('./services/postgres/PlaylistsService');
+const PlaylistActivitiesService = require('./services/postgres/PlaylistActivitiesService');
 
 // collaborations
 const collaborations = require('./api/collaborations');
 const CollaborationsService = require('./services/postgres/CollaborationsService');
 const CollaborationsValidator = require('./validator/collaborations');
 
-const PlaylistActivitiesService = require('./services/postgres/PlaylistActivitiesService');
-
+// exports
 const _exports = require('./api/exports');
 const ExportsValidator = require('./validator/exports');
 const ProducerService = require('./services/rabbitmq/ProducerService');
+
+// uploads
+const uploads = require('./api/uploads');
+const StorageService = require('./services/storage/StorageService');
+const UploadValidator = require('./validator/uploads');
 
 // error
 const ClientError = require('./exceptions/ClientError');
@@ -51,6 +58,7 @@ const init = async () => {
   const collaborationsService = new CollaborationsService();
   const playlistService = new PlaylistsService(collaborationsService);
   const playlistActivitiesService = new PlaylistActivitiesService();
+  const storageService = new StorageService(path.resolve(__dirname, 'api/uploads/file/images'));
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -66,6 +74,9 @@ const init = async () => {
   await server.register([
     {
       plugin: Jwt,
+    },
+    {
+      plugin: Inert,
     },
   ]);
 
@@ -143,6 +154,13 @@ const init = async () => {
         playlistsService: playlistService,
         validator: ExportsValidator,
       },
+    }, {
+      plugin: uploads,
+      options: {
+        service: storageService,
+        albumService: albumsService,
+        validator: UploadValidator,
+      },
     },
   ]);
 
@@ -174,7 +192,7 @@ const init = async () => {
   });
 
   await server.start();
-  console.log(`console log server berjalan pada ${server.info.uri}`);
+  console.log(`server berjalan pada ${server.info.uri}`);
 };
 
 init();
