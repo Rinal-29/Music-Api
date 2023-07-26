@@ -60,7 +60,7 @@ class AlbumsService {
 
   async updateAlbumCoverByAlbumId(fileName, albumId) {
     const query = {
-      text: 'UPDATE albums SET cover=$1 where id=$2',
+      text: 'UPDATE albums SET cover=$1 WHERE id=$2',
       values: [fileName, albumId],
     };
 

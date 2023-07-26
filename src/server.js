@@ -7,6 +7,7 @@ const path = require('path');
 
 const MusicsValidator = require('./validator/musics');
 const tokenManager = require('./tokenize/TokenManagerService');
+const config = require('./utils/config');
 
 // songs
 const songs = require('./api/songs');
@@ -46,11 +47,19 @@ const uploads = require('./api/uploads');
 const StorageService = require('./services/storage/StorageService');
 const UploadValidator = require('./validator/uploads');
 
+// favorites
+const likes = require('./api/likes');
+const LikesService = require('./services/postgres/LikesService');
+
+// cache
+const CacheService = require('./services/redis/CacheService');
+
 // error
 const ClientError = require('./exceptions/ClientError');
 const playlistActivities = require('./api/playlistActivities');
 
 const init = async () => {
+  const cacheService = new CacheService();
   const albumsService = new AlbumsService();
   const songsService = new SongsService();
   const usersService = new UsersService();
@@ -59,10 +68,11 @@ const init = async () => {
   const playlistService = new PlaylistsService(collaborationsService);
   const playlistActivitiesService = new PlaylistActivitiesService();
   const storageService = new StorageService(path.resolve(__dirname, 'api/uploads/file/images'));
+  const likesService = new LikesService(cacheService);
 
   const server = Hapi.server({
-    port: process.env.PORT,
-    host: process.env.HOST,
+    port: config.app.port,
+    host: config.app.host,
     routes: {
       cors: {
         origin: ['*'],
@@ -160,6 +170,12 @@ const init = async () => {
         service: storageService,
         albumService: albumsService,
         validator: UploadValidator,
+      },
+    }, {
+      plugin: likes,
+      options: {
+        service: likesService,
+        albumsService,
       },
     },
   ]);
